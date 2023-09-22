@@ -68,6 +68,9 @@ install(TARGETS slowa
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/slownik.txt
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(slowa)
 endif()
