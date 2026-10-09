@@ -253,12 +253,26 @@ function renderResults(elapsed) {
     const listElement = document.createElement("div");
     listElement.className = "word-list";
     for (const word of list) {
+      const chip = document.createElement("span");
+      chip.className = "word-chip";
+
       const button = document.createElement("button");
       button.type = "button";
       button.className = "word";
       button.textContent = word;
       button.addEventListener("click", () => showPath(word, button));
-      listElement.appendChild(button);
+
+      const link = document.createElement("a");
+      link.className = "word-link";
+      link.href = "https://sjp.pl/" + encodeURIComponent(word);
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.title = `Zobacz „${word}” w SJP.PL`;
+      link.setAttribute("aria-label", `Zobacz „${word}” w SJP.PL`);
+      link.textContent = "↗";
+
+      chip.append(button, link);
+      listElement.appendChild(chip);
     }
     group.appendChild(listElement);
     container.appendChild(group);
@@ -268,7 +282,8 @@ function renderResults(elapsed) {
 }
 
 function showPath(word, button) {
-  const alreadyActive = button.classList.contains("active");
+  const chip = button.closest(".word-chip");
+  const alreadyActive = chip.classList.contains("active");
   clearHighlight();
   if (alreadyActive) {
     return;
@@ -279,11 +294,16 @@ function showPath(word, button) {
     return;
   }
 
-  button.classList.add("active");
+  chip.classList.add("active");
   path.forEach((cellIndex, order) => {
     cells[cellIndex].classList.add("path");
     cells[cellIndex].dataset.order = String(order + 1);
   });
+
+  // On narrow layouts the board is above the results, so bring it back into view.
+  if (window.matchMedia("(max-width: 760px)").matches) {
+    byId("grid").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 
 function findPath(word) {
@@ -335,7 +355,7 @@ function clearHighlight() {
     cell.classList.remove("path");
     delete cell.dataset.order;
   }
-  document.querySelectorAll(".word.active").forEach((element) => element.classList.remove("active"));
+  document.querySelectorAll(".word-chip.active").forEach((element) => element.classList.remove("active"));
 }
 
 function randomBoard() {
