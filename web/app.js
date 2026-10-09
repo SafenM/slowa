@@ -23,6 +23,7 @@ let cells = [];
 let words = [];
 let animationToken = 0;
 let activePath = [];
+let trace = null;
 
 const byId = (id) => document.getElementById(id);
 
@@ -113,7 +114,7 @@ function wireControls() {
   });
   window.addEventListener("resize", () => {
     if (activePath.length) {
-      renderTrace(activePath);
+      renderTrace(activePath, null);
     }
   });
 }
@@ -305,8 +306,9 @@ function showPath(word, button) {
 
   chip.classList.add("active");
   activePath = path;
-  renderTrace(path);
-  playPath(path);
+  const stepMs = stepDuration(path.length);
+  renderTrace(path, stepMs);
+  playPath(path, stepMs);
 
   // On narrow layouts the board is above the results, so bring it back into view.
   if (window.matchMedia("(max-width: 760px)").matches) {
@@ -314,11 +316,14 @@ function showPath(word, button) {
   }
 }
 
+function stepDuration(length) {
+  return Math.min(180, Math.max(90, Math.round(2200 / length)));
+}
+
 // Steps through the path one cell at a time so the eye can follow long words.
-function playPath(path) {
+function playPath(path, stepMs) {
   const token = ++animationToken;
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const stepMs = Math.min(180, Math.max(90, Math.round(2200 / path.length)));
 
   if (reduceMotion) {
     path.forEach((cellIndex, order) => {
@@ -342,6 +347,7 @@ function playPath(path) {
       return;
     }
     clearCurrentMarker();
+    startTraceWind();
   }, path.length * stepMs);
 }
 
@@ -350,28 +356,43 @@ function markStep(cellIndex, order) {
   const cell = cells[cellIndex];
   cell.classList.add("path", "path-current");
   cell.dataset.order = String(order + 1);
+
+  // Draw the trace up to the next letter, so the line arrives as it lights up.
+  if (trace && order + 1 < trace.cumulative.length) {
+    trace.base.style.strokeDashoffset = String(trace.total - trace.cumulative[order + 1]);
+  }
 }
 
 function clearCurrentMarker() {
   document.querySelectorAll(".cell.path-current").forEach((element) => element.classList.remove("path-current"));
 }
 
-// Draws a permanent trace through the path plus dust drifting along it.
-function renderTrace(path) {
+// Draws a permanent trace through the path, revealed in step with the
+// highlights. Once it is complete the wind and dust start flowing.
+function renderTrace(path, stepMs) {
   const svg = byId("trace");
   svg.innerHTML = "";
+  trace = null;
   if (!path.length) {
     return;
   }
 
   const gridRect = byId("grid").getBoundingClientRect();
-  const points = path.map((index) => {
+  const coordinates = path.map((index) => {
     const rect = cells[index].getBoundingClientRect();
-    const x = Math.round(rect.left - gridRect.left + rect.width / 2);
-    const y = Math.round(rect.top - gridRect.top + rect.height / 2);
-    return `${x} ${y}`;
+    return {
+      x: Math.round(rect.left - gridRect.left + rect.width / 2),
+      y: Math.round(rect.top - gridRect.top + rect.height / 2),
+    };
   });
-  const d = "M " + points.join(" L ");
+  const d = "M " + coordinates.map((point) => `${point.x} ${point.y}`).join(" L ");
+
+  const cumulative = [0];
+  let total = 0;
+  for (let i = 1; i < coordinates.length; i++) {
+    total += Math.hypot(coordinates[i].x - coordinates[i - 1].x, coordinates[i].y - coordinates[i - 1].y);
+    cumulative.push(total);
+  }
 
   svg.setAttribute("viewBox", `0 0 ${Math.round(gridRect.width)} ${Math.round(gridRect.height)}`);
 
@@ -383,15 +404,43 @@ function renderTrace(path) {
   const flow = document.createElementNS(SVG_NS, "path");
   flow.setAttribute("d", d);
   flow.setAttribute("class", "trace-flow");
+  flow.style.opacity = "0";
   svg.appendChild(flow);
+
+  trace = { base, flow, cumulative, total, d, length: path.length, windStarted: false };
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (reduceMotion) {
+    base.style.strokeDashoffset = "0";
+    flow.style.opacity = "1";
     return;
   }
 
-  const dustCount = Math.max(3, Math.min(8, Math.round(path.length / 2)));
+  // stepMs === null means "re-render an already drawn path" (e.g. on resize).
+  if (stepMs === null) {
+    base.style.strokeDashoffset = "0";
+    startTraceWind();
+    return;
+  }
+
+  base.style.strokeDasharray = String(total);
+  base.style.strokeDashoffset = String(total);
+  base.style.transition = `stroke-dashoffset ${stepMs}ms linear`;
+  // Commit the hidden state so the very first segment animates too.
+  void base.getBoundingClientRect();
+}
+
+function startTraceWind() {
+  if (!trace || trace.windStarted) {
+    return;
+  }
+  trace.windStarted = true;
+  trace.flow.style.transition = "opacity 0.6s ease";
+  trace.flow.style.opacity = "1";
+
+  const dustCount = Math.max(3, Math.min(8, Math.round(trace.length / 2)));
   const duration = 2.4;
+  const svg = byId("trace");
   for (let i = 0; i < dustCount; i++) {
     const dot = document.createElementNS(SVG_NS, "circle");
     dot.setAttribute("r", String(1.6 + (i % 3) * 0.6));
@@ -400,7 +449,7 @@ function renderTrace(path) {
     const motion = document.createElementNS(SVG_NS, "animateMotion");
     motion.setAttribute("dur", `${duration}s`);
     motion.setAttribute("repeatCount", "indefinite");
-    motion.setAttribute("path", d);
+    motion.setAttribute("path", trace.d);
     motion.setAttribute("begin", `${(-(i * duration) / dustCount).toFixed(2)}s`);
 
     dot.appendChild(motion);
@@ -455,6 +504,7 @@ function findPath(word) {
 function clearHighlight() {
   animationToken++;
   activePath = [];
+  trace = null;
   clearCurrentMarker();
   byId("trace").innerHTML = "";
   for (const cell of cells) {
