@@ -81,11 +81,6 @@ main {
   stroke-linejoin: round;
 }
 
-.trace-dust {
-  fill: #d6efff;
-  filter: drop-shadow(0 0 3px rgba(79, 195, 255, 0.9));
-}
-
 .cell {
   width: 100%;
   aspect-ratio: 1 / 1;

@@ -341,13 +341,6 @@ function playPath(path, stepMs) {
       markStep(cellIndex, order);
     }, order * stepMs);
   });
-
-  window.setTimeout(() => {
-    if (token !== animationToken) {
-      return;
-    }
-    startTraceWind();
-  }, path.length * stepMs);
 }
 
 function markStep(cellIndex, order) {
@@ -395,7 +388,7 @@ function renderTrace(path, stepMs) {
   base.setAttribute("class", "trace-base");
   svg.appendChild(base);
 
-  trace = { base, cumulative, total, d, length: path.length, windStarted: false };
+  trace = { base, cumulative, total };
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (reduceMotion) {
@@ -406,7 +399,6 @@ function renderTrace(path, stepMs) {
   // stepMs === null means "re-render an already drawn path" (e.g. on resize).
   if (stepMs === null) {
     base.style.strokeDashoffset = "0";
-    startTraceWind();
     return;
   }
 
@@ -415,31 +407,6 @@ function renderTrace(path, stepMs) {
   base.style.transition = `stroke-dashoffset ${stepMs}ms linear`;
   // Commit the hidden state so the very first segment animates too.
   void base.getBoundingClientRect();
-}
-
-function startTraceWind() {
-  if (!trace || trace.windStarted) {
-    return;
-  }
-  trace.windStarted = true;
-
-  const dustCount = Math.max(3, Math.min(8, Math.round(trace.length / 2)));
-  const duration = 2.4;
-  const svg = byId("trace");
-  for (let i = 0; i < dustCount; i++) {
-    const dot = document.createElementNS(SVG_NS, "circle");
-    dot.setAttribute("r", String(1.6 + (i % 3) * 0.6));
-    dot.setAttribute("class", "trace-dust");
-
-    const motion = document.createElementNS(SVG_NS, "animateMotion");
-    motion.setAttribute("dur", `${duration}s`);
-    motion.setAttribute("repeatCount", "indefinite");
-    motion.setAttribute("path", trace.d);
-    motion.setAttribute("begin", `${(-(i * duration) / dustCount).toFixed(2)}s`);
-
-    dot.appendChild(motion);
-    svg.appendChild(dot);
-  }
 }
 
 function findPath(word) {
