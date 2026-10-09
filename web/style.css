@@ -81,21 +81,6 @@ main {
   stroke-linejoin: round;
 }
 
-.trace-flow {
-  fill: none;
-  stroke: rgba(79, 195, 255, 0.8);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-dasharray: 2 12;
-  animation: trace-flow 1.4s linear infinite;
-}
-
-@keyframes trace-flow {
-  from { stroke-dashoffset: 14; }
-  to { stroke-dashoffset: 0; }
-}
-
 .trace-dust {
   fill: #d6efff;
   filter: drop-shadow(0 0 3px rgba(79, 195, 255, 0.9));
@@ -154,9 +139,6 @@ main {
 @media (prefers-reduced-motion: reduce) {
   .cell {
     transition: none;
-  }
-  .trace-flow {
-    animation: none;
   }
 }
 

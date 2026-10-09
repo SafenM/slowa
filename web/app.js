@@ -401,18 +401,11 @@ function renderTrace(path, stepMs) {
   base.setAttribute("class", "trace-base");
   svg.appendChild(base);
 
-  const flow = document.createElementNS(SVG_NS, "path");
-  flow.setAttribute("d", d);
-  flow.setAttribute("class", "trace-flow");
-  flow.style.opacity = "0";
-  svg.appendChild(flow);
-
-  trace = { base, flow, cumulative, total, d, length: path.length, windStarted: false };
+  trace = { base, cumulative, total, d, length: path.length, windStarted: false };
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (reduceMotion) {
     base.style.strokeDashoffset = "0";
-    flow.style.opacity = "1";
     return;
   }
 
@@ -435,8 +428,6 @@ function startTraceWind() {
     return;
   }
   trace.windStarted = true;
-  trace.flow.style.transition = "opacity 0.6s ease";
-  trace.flow.style.opacity = "1";
 
   const dustCount = Math.max(3, Math.min(8, Math.round(trace.length / 2)));
   const duration = 2.4;
