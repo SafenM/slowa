@@ -8,7 +8,7 @@
   --muted: #8b93a7;
   --accent: #6ea8fe;
   --accent-2: #4f8cff;
-  --path: #ffcf5c;
+  --path: #4fc3ff;
 }
 
 * { box-sizing: border-box; }
@@ -63,7 +63,7 @@ main {
 .cell {
   width: 100%;
   aspect-ratio: 1 / 1;
-  background: var(--panel-2);
+  background-color: var(--panel-2);
   border: 1px solid var(--border);
   border-radius: 12px;
   color: var(--text);
@@ -72,7 +72,7 @@ main {
   text-align: center;
   text-transform: lowercase;
   caret-color: var(--accent);
-  transition: border-color 0.12s, box-shadow 0.12s, background 0.12s, transform 0.15s;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease, background-color 0.4s ease;
 }
 
 .cell:focus {
@@ -83,9 +83,11 @@ main {
 
 .cell.path {
   border-color: var(--path);
-  background: rgba(255, 207, 92, 0.12);
-  box-shadow: 0 0 0 2px rgba(255, 207, 92, 0.35);
+  background-color: rgba(79, 195, 255, 0.12);
+  box-shadow: 0 0 0 2px rgba(79, 195, 255, 0.3);
   position: relative;
+  /* Fades out slowly, so a letter keeps glowing after the next one starts. */
+  transition: border-color 0.5s ease, box-shadow 0.5s ease, background-color 0.5s ease;
 }
 
 .cell.path::after {
@@ -101,31 +103,16 @@ main {
 
 .cell.path-current {
   border-color: var(--path);
-  background: rgba(255, 207, 92, 0.22);
-  box-shadow: 0 0 0 4px rgba(255, 207, 92, 0.45), 0 0 20px rgba(255, 207, 92, 0.55);
-  transform: scale(1.06);
+  background-color: rgba(79, 195, 255, 0.28);
+  box-shadow: 0 0 0 3px rgba(79, 195, 255, 0.45), 0 0 22px rgba(79, 195, 255, 0.5);
   z-index: 2;
-  animation: cell-pop 0.3s ease-out;
-}
-
-.cell.path-current::after {
-  color: #ffe6a3;
-  font-size: 13px;
-}
-
-@keyframes cell-pop {
-  0% { transform: scale(1); }
-  45% { transform: scale(1.14); }
-  100% { transform: scale(1.06); }
+  /* Fades in quickly so the newest letter leads the eye. */
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .cell {
     transition: none;
-  }
-  .cell.path-current {
-    animation: none;
-    transform: none;
   }
 }
 
@@ -224,7 +211,7 @@ button.primary {
 
 .word-chip.active {
   border-color: var(--path);
-  background: rgba(255, 207, 92, 0.14);
+  background: rgba(79, 195, 255, 0.14);
 }
 
 .word-chip.active .word {
