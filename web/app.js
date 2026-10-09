@@ -333,7 +333,7 @@ function playPath(path) {
       return;
     }
     clearCurrentMarker();
-  }, path.length * stepMs + 250);
+  }, path.length * stepMs);
 }
 
 function markStep(cellIndex, order) {
