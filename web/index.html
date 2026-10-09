@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Znajdź Słowa</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Znajdź Słowa</h1>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div id="grid" class="grid" aria-label="Plansza 4 na 4"></div>
+
+      <div class="controls">
+        <button id="solve" class="primary" type="button">Rozwiąż</button>
+        <button id="random" type="button">Losuj</button>
+        <button id="clear" type="button">Wyczyść</button>
+      </div>
+
+      <p id="status" class="status" role="status">Ładowanie…</p>
+    </section>
+
+    <section class="panel results-panel">
+      <div class="results-head">
+        <h2>Wyniki</h2>
+        <span id="summary" class="summary"></span>
+      </div>
+      <p class="results-hint">Kliknij słowo, aby zobaczyć ścieżkę</p>
+      <div id="results" class="results"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>
+      Słownik: <a href="https://sjp.pl/sl/growy/" target="_blank" rel="noopener">SJP.PL</a>
+      (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>,
+      wersja zmodyfikowana: bez słów z x/v/q i bez słów dwuliterowych).
+      Kod: <a href="https://github.com/SafenM/slowa" target="_blank" rel="noopener">MIT</a>.
+    </p>
+  </footer>
+
+  <script src="slowa.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

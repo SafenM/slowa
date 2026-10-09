@@ -1,0 +1,60 @@
+name: Web (WASM) build and GitHub Pages deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Read-only by default; the deploy job requests the extra page permissions.
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build WASM web assets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 6.0.12
+
+      - name: Build web assets
+        run: ./scripts/build_web.sh
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    # Intentionally disabled for now: the repository is private and GitHub Pages
+    # on the Free plan only publishes from public repositories. The build job
+    # above still runs on every push to validate the WASM build.
+    #
+    # To publish later:
+    #   1. make the repository public (or use a plan that allows private Pages),
+    #   2. enable Pages with "GitHub Actions" as the source in
+    #      Settings -> Pages,
+    #   3. create a repository variable PAGES_ENABLED = true
+    #      in Settings -> Secrets and variables -> Actions -> Variables.
+    if: vars.PAGES_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

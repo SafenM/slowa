@@ -1,0 +1,27 @@
+# Build directories
+build/
+build-*/
+cmake-build-*/
+
+# Old Windows/Qt deployment folder
+bin/
+
+# Qt Creator / IDE
+CMakeLists.txt.user
+*.user
+*.autosave
+
+# Compiled artifacts
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+*.dylib
+*.exe
+
+# Generated web assets (see scripts/build_web.sh)
+web/slowa.js
+web/slowa.wasm
+web/slownik.txt.gz
