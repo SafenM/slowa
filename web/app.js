@@ -346,25 +346,19 @@ function playPath(path, stepMs) {
     if (token !== animationToken) {
       return;
     }
-    clearCurrentMarker();
     startTraceWind();
   }, path.length * stepMs);
 }
 
 function markStep(cellIndex, order) {
-  clearCurrentMarker();
   const cell = cells[cellIndex];
-  cell.classList.add("path", "path-current");
+  cell.classList.add("path");
   cell.dataset.order = String(order + 1);
 
   // Draw the trace up to the next letter, so the line arrives as it lights up.
   if (trace && order + 1 < trace.cumulative.length) {
     trace.base.style.strokeDashoffset = String(trace.total - trace.cumulative[order + 1]);
   }
-}
-
-function clearCurrentMarker() {
-  document.querySelectorAll(".cell.path-current").forEach((element) => element.classList.remove("path-current"));
 }
 
 // Draws a permanent trace through the path, revealed in step with the
@@ -496,7 +490,6 @@ function clearHighlight() {
   animationToken++;
   activePath = [];
   trace = null;
-  clearCurrentMarker();
   byId("trace").innerHTML = "";
   for (const cell of cells) {
     cell.classList.remove("path");

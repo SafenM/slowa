@@ -112,8 +112,8 @@ main {
   background-color: rgba(79, 195, 255, 0.12);
   box-shadow: 0 0 0 2px rgba(79, 195, 255, 0.3);
   position: relative;
-  /* Fades out slowly, so a letter keeps glowing after the next one starts. */
-  transition: border-color 0.5s ease, box-shadow 0.5s ease, background-color 0.5s ease;
+  /* Constant brightness: a lit letter never changes shade. */
+  transition: none;
 }
 
 .cell.path::after {
@@ -125,15 +125,6 @@ main {
   font-weight: 700;
   color: var(--path);
   opacity: 0.9;
-}
-
-.cell.path-current {
-  border-color: var(--path);
-  background-color: rgba(79, 195, 255, 0.28);
-  box-shadow: 0 0 0 3px rgba(79, 195, 255, 0.45), 0 0 22px rgba(79, 195, 255, 0.5);
-  z-index: 2;
-  /* Appears at full brightness at once, then only fades down to .path. */
-  transition: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
