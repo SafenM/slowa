@@ -316,8 +316,11 @@ function showPath(word, button) {
   }
 }
 
+const ANIMATION_SPEED = 1.3; // 30% faster
+
 function stepDuration(length) {
-  return Math.min(180, Math.max(90, Math.round(2200 / length)));
+  const base = Math.min(180, Math.max(90, 2200 / length));
+  return Math.round(base / ANIMATION_SPEED);
 }
 
 // Steps through the path one cell at a time so the eye can follow long words.
