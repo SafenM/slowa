@@ -14,12 +14,16 @@ const WEIGHTS = {
 
 const DR = [0, 0, 1, -1, 1, 1, -1, -1];
 const DC = [1, -1, 0, 0, -1, 1, -1, 1];
+const SVG_NS = "http://www.w3.org/2000/svg";
 
 let wasm = null;
 let alphabet = FALLBACK_ALPHABET;
 let ready = false;
 let cells = [];
 let words = [];
+let animationToken = 0;
+let activePath = [];
+let trace = null;
 
 const byId = (id) => document.getElementById(id);
 
@@ -103,6 +107,16 @@ function wireControls() {
   byId("solve").addEventListener("click", solve);
   byId("random").addEventListener("click", randomBoard);
   byId("clear").addEventListener("click", clearAll);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      clearHighlight();
+    }
+  });
+  window.addEventListener("resize", () => {
+    if (activePath.length) {
+      renderTrace(activePath, null);
+    }
+  });
 }
 
 function normalize(character) {
@@ -283,11 +297,7 @@ function renderResults(elapsed) {
 
 function showPath(word, button) {
   const chip = button.closest(".word-chip");
-  const alreadyActive = chip.classList.contains("active");
   clearHighlight();
-  if (alreadyActive) {
-    return;
-  }
 
   const path = findPath(word);
   if (!path) {
@@ -295,15 +305,111 @@ function showPath(word, button) {
   }
 
   chip.classList.add("active");
-  path.forEach((cellIndex, order) => {
-    cells[cellIndex].classList.add("path");
-    cells[cellIndex].dataset.order = String(order + 1);
-  });
+  activePath = path;
+  const stepMs = stepDuration(path.length);
+  renderTrace(path, stepMs);
+  playPath(path, stepMs);
 
   // On narrow layouts the board is above the results, so bring it back into view.
   if (window.matchMedia("(max-width: 760px)").matches) {
     byId("grid").scrollIntoView({ behavior: "smooth", block: "start" });
   }
+}
+
+const ANIMATION_SPEED = 1.3; // 30% faster
+
+function stepDuration(length) {
+  const base = Math.min(180, Math.max(90, 2200 / length));
+  return Math.round(base / ANIMATION_SPEED);
+}
+
+// Steps through the path one cell at a time so the eye can follow long words.
+function playPath(path, stepMs) {
+  const token = ++animationToken;
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (reduceMotion) {
+    path.forEach((cellIndex, order) => {
+      cells[cellIndex].classList.add("path");
+      cells[cellIndex].dataset.order = String(order + 1);
+    });
+    return;
+  }
+
+  path.forEach((cellIndex, order) => {
+    window.setTimeout(() => {
+      if (token !== animationToken) {
+        return;
+      }
+      markStep(cellIndex, order);
+    }, order * stepMs);
+  });
+}
+
+function markStep(cellIndex, order) {
+  const cell = cells[cellIndex];
+  cell.classList.add("path");
+  cell.dataset.order = String(order + 1);
+
+  // Draw the trace up to the next letter, so the line arrives as it lights up.
+  if (trace && order + 1 < trace.cumulative.length) {
+    trace.base.style.strokeDashoffset = String(trace.total - trace.cumulative[order + 1]);
+  }
+}
+
+// Draws a permanent trace through the path, revealed in step with the
+// highlights. Once it is complete the wind and dust start flowing.
+function renderTrace(path, stepMs) {
+  const svg = byId("trace");
+  svg.innerHTML = "";
+  trace = null;
+  if (!path.length) {
+    return;
+  }
+
+  const gridRect = byId("grid").getBoundingClientRect();
+  const coordinates = path.map((index) => {
+    const rect = cells[index].getBoundingClientRect();
+    return {
+      x: Math.round(rect.left - gridRect.left + rect.width / 2),
+      y: Math.round(rect.top - gridRect.top + rect.height / 2),
+    };
+  });
+  const d = "M " + coordinates.map((point) => `${point.x} ${point.y}`).join(" L ");
+
+  const cumulative = [0];
+  let total = 0;
+  for (let i = 1; i < coordinates.length; i++) {
+    total += Math.hypot(coordinates[i].x - coordinates[i - 1].x, coordinates[i].y - coordinates[i - 1].y);
+    cumulative.push(total);
+  }
+
+  svg.setAttribute("viewBox", `0 0 ${Math.round(gridRect.width)} ${Math.round(gridRect.height)}`);
+
+  const base = document.createElementNS(SVG_NS, "path");
+  base.setAttribute("d", d);
+  base.setAttribute("class", "trace-base");
+  svg.appendChild(base);
+
+  trace = { base, cumulative, total };
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduceMotion) {
+    base.style.strokeDashoffset = "0";
+    return;
+  }
+
+  // stepMs === null means "re-render an already drawn path" (e.g. on resize).
+  if (stepMs === null) {
+    base.style.strokeDashoffset = "0";
+    return;
+  }
+
+  base.style.strokeDasharray = String(total);
+  base.style.strokeDashoffset = String(total);
+  base.style.transition = `stroke-dashoffset ${stepMs}ms linear`;
+  // Commit the hidden state so the very first segment animates too.
+  void base.getBoundingClientRect();
 }
 
 function findPath(word) {
@@ -351,6 +457,10 @@ function findPath(word) {
 }
 
 function clearHighlight() {
+  animationToken++;
+  activePath = [];
+  trace = null;
+  byId("trace").innerHTML = "";
   for (const cell of cells) {
     cell.classList.remove("path");
     delete cell.dataset.order;
