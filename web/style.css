@@ -72,7 +72,7 @@ main {
   text-align: center;
   text-transform: lowercase;
   caret-color: var(--accent);
-  transition: border-color 0.12s, box-shadow 0.12s, background 0.12s;
+  transition: border-color 0.12s, box-shadow 0.12s, background 0.12s, transform 0.15s;
 }
 
 .cell:focus {
@@ -97,6 +97,36 @@ main {
   font-weight: 700;
   color: var(--path);
   opacity: 0.9;
+}
+
+.cell.path-current {
+  border-color: var(--path);
+  background: rgba(255, 207, 92, 0.22);
+  box-shadow: 0 0 0 4px rgba(255, 207, 92, 0.45), 0 0 20px rgba(255, 207, 92, 0.55);
+  transform: scale(1.06);
+  z-index: 2;
+  animation: cell-pop 0.3s ease-out;
+}
+
+.cell.path-current::after {
+  color: #ffe6a3;
+  font-size: 13px;
+}
+
+@keyframes cell-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.14); }
+  100% { transform: scale(1.06); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cell {
+    transition: none;
+  }
+  .cell.path-current {
+    animation: none;
+    transform: none;
+  }
 }
 
 .controls {

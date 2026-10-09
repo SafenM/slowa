@@ -20,6 +20,7 @@ let alphabet = FALLBACK_ALPHABET;
 let ready = false;
 let cells = [];
 let words = [];
+let animationToken = 0;
 
 const byId = (id) => document.getElementById(id);
 
@@ -103,6 +104,11 @@ function wireControls() {
   byId("solve").addEventListener("click", solve);
   byId("random").addEventListener("click", randomBoard);
   byId("clear").addEventListener("click", clearAll);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      clearHighlight();
+    }
+  });
 }
 
 function normalize(character) {
@@ -283,11 +289,7 @@ function renderResults(elapsed) {
 
 function showPath(word, button) {
   const chip = button.closest(".word-chip");
-  const alreadyActive = chip.classList.contains("active");
   clearHighlight();
-  if (alreadyActive) {
-    return;
-  }
 
   const path = findPath(word);
   if (!path) {
@@ -295,15 +297,54 @@ function showPath(word, button) {
   }
 
   chip.classList.add("active");
-  path.forEach((cellIndex, order) => {
-    cells[cellIndex].classList.add("path");
-    cells[cellIndex].dataset.order = String(order + 1);
-  });
+  playPath(path);
 
   // On narrow layouts the board is above the results, so bring it back into view.
   if (window.matchMedia("(max-width: 760px)").matches) {
     byId("grid").scrollIntoView({ behavior: "smooth", block: "start" });
   }
+}
+
+// Steps through the path one cell at a time so the eye can follow long words.
+function playPath(path) {
+  const token = ++animationToken;
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const stepMs = Math.min(180, Math.max(90, Math.round(2200 / path.length)));
+
+  if (reduceMotion) {
+    path.forEach((cellIndex, order) => {
+      cells[cellIndex].classList.add("path");
+      cells[cellIndex].dataset.order = String(order + 1);
+    });
+    return;
+  }
+
+  path.forEach((cellIndex, order) => {
+    window.setTimeout(() => {
+      if (token !== animationToken) {
+        return;
+      }
+      markStep(cellIndex, order);
+    }, order * stepMs);
+  });
+
+  window.setTimeout(() => {
+    if (token !== animationToken) {
+      return;
+    }
+    clearCurrentMarker();
+  }, path.length * stepMs + 250);
+}
+
+function markStep(cellIndex, order) {
+  clearCurrentMarker();
+  const cell = cells[cellIndex];
+  cell.classList.add("path", "path-current");
+  cell.dataset.order = String(order + 1);
+}
+
+function clearCurrentMarker() {
+  document.querySelectorAll(".cell.path-current").forEach((element) => element.classList.remove("path-current"));
 }
 
 function findPath(word) {
@@ -351,6 +392,8 @@ function findPath(word) {
 }
 
 function clearHighlight() {
+  animationToken++;
+  clearCurrentMarker();
   for (const cell of cells) {
     cell.classList.remove("path");
     delete cell.dataset.order;
