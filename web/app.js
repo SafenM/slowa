@@ -14,6 +14,7 @@ const WEIGHTS = {
 
 const DR = [0, 0, 1, -1, 1, 1, -1, -1];
 const DC = [1, -1, 0, 0, -1, 1, -1, 1];
+const SVG_NS = "http://www.w3.org/2000/svg";
 
 let wasm = null;
 let alphabet = FALLBACK_ALPHABET;
@@ -21,6 +22,7 @@ let ready = false;
 let cells = [];
 let words = [];
 let animationToken = 0;
+let activePath = [];
 
 const byId = (id) => document.getElementById(id);
 
@@ -107,6 +109,11 @@ function wireControls() {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       clearHighlight();
+    }
+  });
+  window.addEventListener("resize", () => {
+    if (activePath.length) {
+      renderTrace(activePath);
     }
   });
 }
@@ -297,6 +304,8 @@ function showPath(word, button) {
   }
 
   chip.classList.add("active");
+  activePath = path;
+  renderTrace(path);
   playPath(path);
 
   // On narrow layouts the board is above the results, so bring it back into view.
@@ -347,6 +356,58 @@ function clearCurrentMarker() {
   document.querySelectorAll(".cell.path-current").forEach((element) => element.classList.remove("path-current"));
 }
 
+// Draws a permanent trace through the path plus dust drifting along it.
+function renderTrace(path) {
+  const svg = byId("trace");
+  svg.innerHTML = "";
+  if (!path.length) {
+    return;
+  }
+
+  const gridRect = byId("grid").getBoundingClientRect();
+  const points = path.map((index) => {
+    const rect = cells[index].getBoundingClientRect();
+    const x = Math.round(rect.left - gridRect.left + rect.width / 2);
+    const y = Math.round(rect.top - gridRect.top + rect.height / 2);
+    return `${x} ${y}`;
+  });
+  const d = "M " + points.join(" L ");
+
+  svg.setAttribute("viewBox", `0 0 ${Math.round(gridRect.width)} ${Math.round(gridRect.height)}`);
+
+  const base = document.createElementNS(SVG_NS, "path");
+  base.setAttribute("d", d);
+  base.setAttribute("class", "trace-base");
+  svg.appendChild(base);
+
+  const flow = document.createElementNS(SVG_NS, "path");
+  flow.setAttribute("d", d);
+  flow.setAttribute("class", "trace-flow");
+  svg.appendChild(flow);
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduceMotion) {
+    return;
+  }
+
+  const dustCount = Math.max(3, Math.min(8, Math.round(path.length / 2)));
+  const duration = 2.4;
+  for (let i = 0; i < dustCount; i++) {
+    const dot = document.createElementNS(SVG_NS, "circle");
+    dot.setAttribute("r", String(1.6 + (i % 3) * 0.6));
+    dot.setAttribute("class", "trace-dust");
+
+    const motion = document.createElementNS(SVG_NS, "animateMotion");
+    motion.setAttribute("dur", `${duration}s`);
+    motion.setAttribute("repeatCount", "indefinite");
+    motion.setAttribute("path", d);
+    motion.setAttribute("begin", `${(-(i * duration) / dustCount).toFixed(2)}s`);
+
+    dot.appendChild(motion);
+    svg.appendChild(dot);
+  }
+}
+
 function findPath(word) {
   const letters = Array.from(word);
   const board = cells.map((cell) => normalize(cell.value.trim()));
@@ -393,7 +454,9 @@ function findPath(word) {
 
 function clearHighlight() {
   animationToken++;
+  activePath = [];
   clearCurrentMarker();
+  byId("trace").innerHTML = "";
   for (const cell of cells) {
     cell.classList.remove("path");
     delete cell.dataset.order;
