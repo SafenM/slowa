@@ -170,16 +170,67 @@ button.primary {
   gap: 6px;
 }
 
-.word {
-  padding: 5px 10px;
-  font-size: 14px;
+.word-chip {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
   border-radius: 999px;
+  background: var(--panel-2);
+  overflow: hidden;
+  transition: border-color 0.12s, background 0.12s;
 }
 
-.word.active {
+.word-chip .word {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 5px 10px;
+  font-size: 14px;
+}
+
+.word-chip .word:active {
+  transform: none;
+}
+
+.word-chip.active {
   border-color: var(--path);
   background: rgba(255, 207, 92, 0.14);
+}
+
+.word-chip.active .word {
   color: var(--path);
+}
+
+.word-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  padding: 0 7px;
+  border-left: 1px solid var(--border);
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1;
+  transition: color 0.12s, background 0.12s, opacity 0.12s;
+}
+
+.word-link:hover,
+.word-link:focus-visible {
+  color: var(--accent);
+  background: rgba(110, 168, 254, 0.12);
+}
+
+/* Keep the list clean on pointer devices; always show the link on touch. */
+@media (hover: hover) {
+  .word-link {
+    opacity: 0;
+  }
+  .word-chip:hover .word-link,
+  .word-chip:focus-within .word-link,
+  .word-chip.active .word-link {
+    opacity: 1;
+  }
 }
 
 .muted { color: var(--muted); }
