@@ -9,6 +9,7 @@
   --accent: #6ea8fe;
   --accent-2: #4f8cff;
   --path: #4fc3ff;
+  --path-light: #7fd2ff;
 }
 
 * { box-sizing: border-box; }
@@ -150,7 +151,7 @@ button:hover { border-color: var(--accent); }
 button:active { transform: translateY(1px); }
 
 button.primary {
-  background: linear-gradient(180deg, var(--accent), var(--accent-2));
+  background: linear-gradient(180deg, var(--path-light), var(--path));
   border-color: transparent;
   color: #08101f;
   font-weight: 700;
